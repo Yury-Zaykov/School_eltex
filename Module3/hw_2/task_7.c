@@ -2,6 +2,10 @@
 	Прогон программы для pipe в одном процессе
 	Прогон программы для организации однонаправленной связи между родственными процессами через pipe
 	Написание, компиляция и запуск программы для организации двунаправленной связи между родственными процессами через pipe 
+
+    Процесс родитель инициализирует массив данных и при записи увеличивает значения в 10 раз, при чтении, просто выводит параметры
+    в консоль. В конце своей работы процесс родитель очищает память из под семафоров.
+    Процесс ребенок при записи делит значения массива на 5, при чтении выводит значения в консоль
 */
 #include <unistd.h>
 #include <sys/wait.h>
@@ -15,6 +19,7 @@
 
 #define MAX 4096
 #define SIZE_ARRAY  10
+#define CNT_CYCLES  3
 
 union semun 
 {
@@ -75,16 +80,17 @@ int main()
         printf("Can\'t wait for condition %d\n", errno);
         exit(-1);
     }
-    // if(semop(semid, &sem_Ar, 1) < 0)
-    // {
-    //     printf("Can\'t wait for condition %d\n", errno);
-    //     exit(-1);
-    // }
+    if(semop(semid, &sem_Ar, 1) < 0)
+    {
+        printf("Can\'t wait for condition %d\n", errno);
+        exit(-1);
+    }
 
 	/* Создаем новый процесс */
 
 	pid = fork();
 
+    
 	if(pid < 0)
 	{
 		perror("fork : ");
@@ -92,80 +98,81 @@ int main()
 	}
 	else if(pid > 0) /*Это родитель*/
 	{
-        printf("Hey, I`m Parent!\n");
+        sleep(1);
+        printf("\nHey, I`m Parent!\n");
 		printf("My PID: %d\n", getpid());
-		printf("My PPID: %d\n", getppid());
-		printf("My child PID: %d\n", pid);
+		printf("My child PID: %d\n\n", pid);
         
         int array_dad[SIZE_ARRAY];
         printf("Массив проинициализирован: ");
         for (int i = 0; i < SIZE_ARRAY; i++)
         {
             array_dad[i] = i + 1;
-            printf(" %d", array_dad[i]);
-        }
-        printf("\n");
-    	//close(fd[0]); /*Закрываем чтение*/
-
-        printf("\nThis is Parent\n");
-        if(semop(semid, &sem_Dw, 1) < 0)
-        {
-            printf("Can\'t wait for condition %d\n", errno);
-            exit(-1);
-        }
-
-        printf("Параметры массива изменены родителем: ");
-        for (int i = 0; i < SIZE_ARRAY; i++)
-        {
-            array_dad[i] = array_dad[i] * 10;
-            printf(" %d", array_dad[i]);
-        }
-
-        printf("\nПроизвожу запись \n");
-    	if((write(fd[1], array_dad, SIZE_ARRAY*sizeof(int))) != SIZE_ARRAY*sizeof(int))
-		{
-			perror(" write : ");
-			exit(0);
-		}
-
-        if(semop(semid, &sem_Aw, 1) < 0)
-        {
-            printf("Can\'t wait for condition %d\n", errno);
-            exit(-1);
-        }
-
-		// if((waitpid(pid, NULL, 0)) < 0)
-		// {
-		// 	perror("waitpid : ");
-		// 	exit(0);
-		// }
-
-        if(semop(semid, &sem_Dr, 1) < 0)
-        {
-            printf("Can\'t wait for condition %d\n", errno);
-            exit(-1);
-        }
-
-		printf("\nThis is Parent\n");
-        printf("Считываю данные\n");
-		if(read(fd[0], array_dad, SIZE_ARRAY*sizeof(int)) != SIZE_ARRAY*sizeof(int))
-        {
-            printf("Can\'t read!");
-            exit(-1);
-        }
-
-        printf("I read: ");
-		for (int i = 0; i < SIZE_ARRAY; i++)
-        {
             printf("%d ", array_dad[i]);
         }
-
-        if(semop(semid, &sem_Ar, 1) < 0)
+        printf("\n");
+    	
+        for (int i = 0; i < CNT_CYCLES; i++)
         {
-            printf("Can\'t wait for condition %d\n", errno);
+            if(semop(semid, &sem_Dw, 1) < 0)
+            {
+                printf("Can\'t wait for condition %d\n", errno);
+                exit(-1);
+            }
+
+            printf("Параметры массива изменены родителем: ");
+            for (int i = 0; i < SIZE_ARRAY; i++)
+            {
+                array_dad[i] = array_dad[i] * 10;
+                printf("%d ", array_dad[i]);
+            }
+            printf("\n");
+
+            if((write(fd[1], array_dad, SIZE_ARRAY*sizeof(int))) != SIZE_ARRAY*sizeof(int))
+            {
+                perror(" write : ");
+                exit(0);
+            }
+
+            if(semop(semid, &sem_Aw, 1) < 0)
+            {
+                printf("Can\'t wait for condition %d\n", errno);
+                exit(-1);
+            }
+
+            if(semop(semid, &sem_Dr, 1) < 0)
+            {
+                printf("Can\'t wait for condition %d\n", errno);
+                exit(-1);
+            }
+
+            if(read(fd[0], array_dad, SIZE_ARRAY*sizeof(int)) != SIZE_ARRAY*sizeof(int))
+            {
+                printf("Can\'t read!");
+                exit(-1);
+            }
+
+            printf("Data read parent: ");
+            for (int i = 0; i < SIZE_ARRAY; i++)
+            {
+                printf("%d ", array_dad[i]);
+            }
+            printf("\n");
+
+            if(semop(semid, &sem_Ar, 1) < 0)
+            {
+                printf("Can\'t wait for condition %d\n", errno);
+                exit(-1);
+            }
+        }
+        
+        sleep(0.2);
+
+        if (semctl(semid, 0, IPC_RMID,0) < 0)
+        {
+            printf("Can't delete sem\n");
             exit(-1);
         }
-
 	}
 	else /*Это потомок*/ 
 	{
@@ -175,67 +182,58 @@ int main()
 
         int array_ch[SIZE_ARRAY];
         
-    	//close(fd[1]); /*Закрываем запись*/
+        for (int i = 0; i < CNT_CYCLES; i++)
+        {
+            if(semop(semid, &sem_Dr, 1) < 0)
+            {
+                printf("Can\'t wait for condition %d\n", errno);
+                exit(-1);
+            }
 
+            if (read(fd[0], array_ch, SIZE_ARRAY*sizeof(int)) != SIZE_ARRAY*sizeof(int))
+            {
+                printf("Can\'t read!");
+                exit(-1);
+            }
+            
+            printf("Data read child: ");
+            for (int i = 0; i < SIZE_ARRAY; i++)
+            {
+                printf("%d ", array_ch[i]);
+            }
+            printf("\n");
+            if(semop(semid, &sem_Ar, 1) < 0)
+            {
+                printf("Can\'t wait for condition %d\n", errno);
+                exit(-1);
+            }
+            
+            if(semop(semid, &sem_Dw, 1) < 0)
+            {
+                printf("Can\'t wait for condition %d\n", errno);
+                exit(-1);
+            }
+            
+            printf("Параметры массива изменены потомком: ");
+            for (int i = 0; i < SIZE_ARRAY; i++)
+            {
+                array_ch[i] = array_ch[i] / 5;
+                printf(" %d", array_ch[i]);
+            }
+            printf("\n");
 
-        if(semop(semid, &sem_Dr, 1) < 0)
-        {
-            printf("Can\'t wait for condition %d\n", errno);
-            exit(-1);
-        }
-        printf("I`m Child!\n");
-        printf("Считываю данные\n");
-        if (read(fd[0], array_ch, SIZE_ARRAY*sizeof(int)) != SIZE_ARRAY*sizeof(int))
-        {
-            printf("Can\'t read!");
-            exit(-1);
-        }
-        
-		printf("I read: ");
-        for (int i = 0; i < SIZE_ARRAY; i++)
-        {
-            printf(" %d", array_ch[i]);
-        }
-        printf("\n");
-        if(semop(semid, &sem_Ar, 1) < 0)
-        {
-            printf("Can\'t wait for condition %d\n", errno);
-            exit(-1);
-        }
-		
-        if(semop(semid, &sem_Dw, 1) < 0)
-        {
-            printf("Can\'t wait for condition %d\n", errno);
-            exit(-1);
-        }
-        printf("I`m Child!\n");
-        printf("Параметры массива изменены потомком: ");
-        for (int i = 0; i < SIZE_ARRAY; i++)
-        {
-            array_ch[i] = array_ch[i] / 5;
-            printf(" %d", array_ch[i]);
-        }
-        printf("\n");
-        printf("Произвожу запись\n: ");
-    	if((write(fd[1], array_ch, SIZE_ARRAY*sizeof(int))) != SIZE_ARRAY*sizeof(int))
-		{
-			perror(" write : ");
-			exit(0);
-		}
+            if((write(fd[1], array_ch, SIZE_ARRAY*sizeof(int))) != SIZE_ARRAY*sizeof(int))
+            {
+                perror(" write : ");
+                exit(0);
+            }
 
-        if(semop(semid, &sem_Aw, 1) < 0)
-        {
-            printf("Can\'t wait for condition %d\n", errno);
-            exit(-1);
+            if(semop(semid, &sem_Aw, 1) < 0)
+            {
+                printf("Can\'t wait for condition %d\n", errno);
+                exit(-1);
+            }
         }
-		
 	}
-
-    // sleep(5);
-    // if (semctl(semid, 0, IPC_RMID,0) < 0)
-    // {
-    //     printf("Can't delete sem\n");
-    //     exit(-1);
-    // }
-	// exit(0);
+	exit(0);
 }
