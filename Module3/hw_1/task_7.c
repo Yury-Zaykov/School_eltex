@@ -18,7 +18,7 @@
 int main (int argc, char** argv)
 {
 	int fd;
-   
+	int g, p;
 	ssize_t written_bytes;
 
    mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP; // переменная прав доступа к файлу
@@ -34,12 +34,33 @@ int main (int argc, char** argv)
 
 	fd = open(argv[1], flags, mode);
 
+	printf("%d\n", fd);
+
 	if (fd < 0)
 	{
 		fprintf (stderr, "Cannot open file\n");
 		exit (1);
 	}	
 	
+	g = open("g.txt", flags, mode);
+
+	printf("%d\n", g);
+
+	if (g < 0)
+	{
+		fprintf (stderr, "Cannot open file\n");
+		exit (1);
+	}
+
+	p = open("p.txt", flags, mode);
+
+	printf("%d\n", p);
+
+	if (p < 0)
+	{
+		fprintf (stderr, "Cannot open file\n");
+		exit (1);
+	}
 
    written_bytes = write(fd, buffer, BUFFER_SIZE);
 
