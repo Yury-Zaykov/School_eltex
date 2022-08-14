@@ -6,18 +6,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define LAST_MESSAGE 255 /* Тип сообщения для прекращения работы программы */ 
+#define LAST_MESSAGE_TASK_7_1 254 
+#define LAST_MESSAGE_TASK_7_2 255
+
 int main()
 {
     int msqid;
-    char pathname[] = "task_5_1.c";
+    char pathname[] = "task_7_1.c";
     key_t key; 
-    int len;
+    int len, maxlen;
     /* пользовательская структура для сообщения */
-    struct mymsgbuf
+     struct mymsgbuf
     { 
         long mtype;
-        char mtext[81]; 
+        struct
+        {
+            int f_end;
+            char mtext[81];
+        } mystr; 
     } mybuf;
     
     if((key = ftok(pathname,0)) < 0)
@@ -35,8 +41,9 @@ int main()
     for (int i = 1; i <= 5; i++)
     { 
         mybuf.mtype = 1;
-        strcpy(mybuf.mtext, "Hey, this is task_5_1");
-        len = strlen(mybuf.mtext)+1;
+        strcpy(mybuf.mystr.mtext, "Hey, this is task_7_1");
+
+        len = sizeof(mybuf.mystr);
 
         if (msgsnd(msqid, (struct msgbuf *) &mybuf, len, 0) < 0)
         {
@@ -47,14 +54,33 @@ int main()
     }
     /* Отсылаем сообщение, которое заставит получающий процесс
     прекратить работу, с типом LAST_MESSAGE и длиной 0 */ 
-    mybuf.mtype = LAST_MESSAGE;
-    len = 0;
+    mybuf.mystr.f_end = 71;
+
+    len = sizeof(mybuf.mystr);
     if (msgsnd(msqid, (struct msgbuf *) &mybuf, len, 0) < 0)
     {
         printf("Can\'t send message to queue\n");
         msgctl(msqid, IPC_RMID, (struct msqid_ds *) NULL);
         exit(-1);
     }
+
+    while(1)
+    { 
+        maxlen = sizeof(mybuf.mystr);
+        if( ( len = msgrcv(msqid, (struct msgbuf *) &mybuf, maxlen, 2, 0 ) ) < 0)
+        {
+            printf("Can\'t receive message from queue\n");
+            exit(-1);
+        }
+
+        if (mybuf.mystr.f_end == 72)
+        {
+            break;
+        }
+
+        printf("message type = %ld, info = %s\n", mybuf.mtype, mybuf.mystr.mtext);
+    }
+
+    msgctl(msqid, IPC_RMID, (struct msqid_ds *) NULL);
     return 0;
 }
-

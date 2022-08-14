@@ -1,4 +1,4 @@
-/* Прогон примера с однонаправленной передачей текстовой информации */
+/* Прогон примера с однонаправленной передачей числовой информации */
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
@@ -9,15 +9,20 @@
 #define LAST_MESSAGE 255 /* Тип сообщения для прекращения работы программы */ 
 int main()
 {
+    srand(548);
     int msqid;
-    char pathname[] = "task_5_1.c";
+    char pathname[] = "task_6_1.c";
     key_t key; 
     int len;
     /* пользовательская структура для сообщения */
     struct mymsgbuf
     { 
         long mtype;
-        char mtext[81]; 
+        struct
+        {
+            int random;
+        } strRand;
+        
     } mybuf;
     
     if((key = ftok(pathname,0)) < 0)
@@ -35,9 +40,9 @@ int main()
     for (int i = 1; i <= 5; i++)
     { 
         mybuf.mtype = 1;
-        strcpy(mybuf.mtext, "Hey, this is task_5_1");
-        len = strlen(mybuf.mtext)+1;
-
+        mybuf.strRand.random = rand() % 100;
+        len = sizeof(mybuf.strRand);
+         
         if (msgsnd(msqid, (struct msgbuf *) &mybuf, len, 0) < 0)
         {
             printf("Can\'t send message to queue\n");
