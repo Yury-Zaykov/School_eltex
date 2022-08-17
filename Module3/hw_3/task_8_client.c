@@ -44,7 +44,7 @@ int main()
         exit(-1);
     }
 
-    for (size_t i = 0; i < 4; i++)
+    for (size_t i = 0; i < 5; i++)
     {
         send_clnt_buf.mtype = 1;
 
@@ -79,7 +79,7 @@ int main()
         }
         else
         {
-            sleep(2);
+            sleep(1);
             //printf("Это родитель, PID: %d", pid = getpid());
         }
     }
