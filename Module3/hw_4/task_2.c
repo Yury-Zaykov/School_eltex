@@ -1,4 +1,4 @@
-/* Прогон программы, игнорирующей сигнал SIGINT */
+/* Прогон программы, игнорирующей сигнал SIGINT и SIGQUIT*/
 #include <signal.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -9,9 +9,10 @@ int main()
 {
     pid_t pid;
     printf("My PID: %d\n", getpid());
-    /* Выставляем реакцию процесса на сигнал SIGINT на игнорирование */ 
+     
     (void)signal(SIGINT, SIG_IGN);
-    
+    (void)signal(SIGQUIT, SIG_IGN);
+
     int i = 0;
     while(1)
     {
