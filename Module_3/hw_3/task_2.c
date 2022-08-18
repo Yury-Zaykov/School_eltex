@@ -11,7 +11,6 @@
 
 int main(int argc, char** argv[])
 {
-    int rr = 55;
     char pathname[MAX_BUF];
     DIR* curdir;
     struct dirent* curdirent;
