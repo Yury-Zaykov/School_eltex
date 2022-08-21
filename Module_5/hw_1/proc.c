@@ -31,12 +31,12 @@ ssize_t write_proc(struct file *filp,const char *buf,size_t count,loff_t *offp)
     return count;
 }
 
-struct file_operations proc_fops = {
-read:
-	read_proc,
-write:
-	write_proc
-};
+// struct file_operations proc_fops = {
+// read:
+// 	read_proc,
+// write:
+// 	write_proc
+// };
 
 const struct proc_ops proc_ffops = 
 {
