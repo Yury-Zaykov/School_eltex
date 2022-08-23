@@ -13,13 +13,16 @@
 # Ignore system files VS Code
 *.json
 
-#
+# Не игнорировать makefile
 !Makefile
 
 # Ignore text files
 *.txt
 
-# Ignore text files
+# Ignore bin files
+*.bin
+
+# Ignore log files
 *.log
 
 # Prerequisites
