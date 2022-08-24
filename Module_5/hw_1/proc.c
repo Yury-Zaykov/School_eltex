@@ -52,7 +52,8 @@ void create_new_proc_entry(void)  //use of void for no arguments is compulsory n
     msg=kmalloc(10*sizeof(char), GFP_KERNEL);
 }
  
-int proc_init (void) {
+int proc_init (void) 
+{
     create_new_proc_entry();
     return 0;
 }
