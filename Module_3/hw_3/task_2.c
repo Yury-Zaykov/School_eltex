@@ -31,6 +31,7 @@ int main(int argc, char** argv[])
         printf("%s | ", curdirent->d_name);
         if (curdirent->d_type == DT_REG) printf("regular file \n");
         if (curdirent->d_type == DT_DIR) printf("directory \n");
+        
     }
     
     if ((closedir(curdir)) < 0)

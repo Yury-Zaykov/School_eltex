@@ -81,6 +81,7 @@ int main()
 
     printf("время создания файла: %ld\n\n",file.st_ctime);
 
+
     // Удаление файла и ссылок
     fprintf(stderr, "Press <Enter> to delete files end exit...");
     getchar();

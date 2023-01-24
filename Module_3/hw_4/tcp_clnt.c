@@ -31,7 +31,7 @@ void main(int argc, char **argv)
     bzero(recvline,1000);
 
     /* Создаем TCP сокет */
-    if((sockfd = socket(PF_INET, SOCK_STREAM, 0)) < 0){
+    if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
         perror(NULL); /* Печатаем сообщение об ошибке */
         exit(1);
     }
